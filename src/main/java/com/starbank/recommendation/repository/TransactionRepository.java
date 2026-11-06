@@ -1,12 +1,11 @@
 package com.starbank.recommendation.repository;
 
-import lombok.RequiredArgsConstructor;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 import java.util.UUID;
 
 @Repository
-@RequiredArgsConstructor
+
 public class TransactionRepository {
 
     private final JdbcTemplate jdbcTemplate;
