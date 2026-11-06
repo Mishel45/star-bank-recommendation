@@ -1,0 +1,66 @@
+openapi: 3.0.3
+info:
+  title: Recommendation Service — Стар Банк MVP
+  version: 1.0.0
+  description: API сервиса персональных рекомендаций банковских продуктов на основе транзакционной активности клиентов банка «Стар». Разработчики — Михаил Павлов и Диана Скибицкая.
+servers:
+  - url: http://localhost:8080
+    description: Локальный сервер разработки
+paths:
+  /recommendation/{user_id}:
+    get:
+      summary: Получить персональные рекомендации для клиента
+      operationId: getRecommendations
+      description: Анализирует историю транзакций пользователя в базе данных H2 и возвращает список подходящих банковских продуктов на основе бизнес-правил MVP.
+      parameters:
+        - name: user_id
+          in: path
+          required: true
+          description: Уникальный идентификатор пользователя (UUID)
+          schema:
+            type: string
+            format: uuid
+            example: cd515076-5d8a-44be-930e-8d4fcb79f42d
+      responses:
+        '200':
+          description: Успешная обработка запроса. Возвращается список рекомендаций (может быть пустым).
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - user_id
+                  - recommendations
+                properties:
+                  user_id:
+                    type: string
+                    format: uuid
+                    description: Идентификатор запрашиваемого пользователя
+                    example: cd515076-5d8a-44be-930e-8d4fcb79f42d
+                  recommendations:
+                    type: array
+                    description: Список подходящих банковских продуктов
+                    items:
+                      $ref: '#/components/schemas/RecommendationDto'
+components:
+  schemas:
+    RecommendationDto:
+      type: object
+      required:
+        - id
+        - name
+        - text
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Уникальный ID продукта (соответствует ТЗ)
+          example: 147f6a0f-3b91-413b-ab99-87f081d60d5a
+        name:
+          type: string
+          description: Название банковского продукта
+          example: Invest 500
+        text:
+          type: string
+          description: Маркетинговое описание продукта и условий его открытия
+          example: Откройте свой путь к успеху с индивидуальным инвестиционным счетом (ИИС) от нашего банка!...
