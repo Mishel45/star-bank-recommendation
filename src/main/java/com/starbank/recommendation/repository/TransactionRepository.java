@@ -1,58 +1,60 @@
 package com.starbank.recommendation.repository;
 
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
+
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 
 @Repository
-
 public class TransactionRepository {
 
     private final JdbcTemplate jdbcTemplate;
 
-    public TransactionRepository(JdbcTemplate jdbcTemplate) {
-        this.jdbcTemplate = jdbcTemplate;
+    // Три отдельных кэша Caffeine по критериям ТЗ
+    private final Cache<String, Boolean> productTypeCache;
+    private final Cache<String, Double> sumCache;
+    private final Cache<String, Long> countCache;
+
+    public TransactionRepository(JdbcTemplate transactionJdbcTemplate) {
+        this.jdbcTemplate = transactionJdbcTemplate;
+
+        // Инициализация кэшей
+        this.productTypeCache = Caffeine.newBuilder().expireAfterWrite(10, TimeUnit.MINUTES).maximumSize(10000).build();
+        this.sumCache = Caffeine.newBuilder().expireAfterWrite(10, TimeUnit.MINUTES).maximumSize(10000).build();
+        this.countCache = Caffeine.newBuilder().expireAfterWrite(10, TimeUnit.MINUTES).maximumSize(10000).build();
     }
 
-    /**
-     * Проверяет, использует ли пользователь продукт определенного типа.
-     * Критерий из ТЗ: "Клиент является пользователем продукта тогда и только тогда,
-     * когда в таблице транзакций по этому продукту есть любая транзакция".
-     *
-     * Оптимизация: Используется SELECT EXISTS вместо выгрузки строк или тяжелого COUNT(*),
-     * что позволяет СУБД H2 остановить сканирование при первом же совпадении.
-     */
     public boolean hasProductType(UUID userId, String productType) {
-        String sql = """
-            SELECT EXISTS (
-                SELECT 1 
-                FROM transactions t
-                JOIN products p ON t.product_id = p.id
-                WHERE t.user_id = ? AND p.type = ?
-            )
-        """;
+        String cacheKey = userId.toString() + ":" + productType;
 
-        Boolean result = jdbcTemplate.queryForObject(sql, Boolean.class, userId, productType);
-        return Boolean.TRUE.equals(result);
+        // Паттерн get-if-absent-compute
+        return Boolean.TRUE.equals(productTypeCache.get(cacheKey, key -> {
+            String sql = "SELECT EXISTS (SELECT 1 FROM transactions t JOIN products p ON t.product_id = p.id WHERE t.user_id = ? AND p.type = ?)";
+            Boolean result = jdbcTemplate.queryForObject(sql, Boolean.class, userId, productType);
+            return result != null ? result : false;
+        }));
     }
 
-    /**
-     * Вычисляет агрегированную сумму транзакций конкретного типа операции (DEPOSIT / WITHDRAW)
-     * для всех продуктов определенного типа (DEBIT / SAVING / INVEST / CREDIT).
-     *
-     * Оптимизация: Вся математика выполняется на стороне СУБД H2.
-     * Функция COALESCE гарантирует, что если у пользователя нет транзакций данного типа,
-     * вместо NULL вернется корректный 0.0, предотвращая NullPointerException в Java.
-     */
     public double getSumByProductAndTransactionType(UUID userId, String productType, String transactionType) {
-        String sql = """
-            SELECT COALESCE(SUM(t.amount), 0)
-            FROM transactions t
-            JOIN products p ON t.product_id = p.id
-            WHERE t.user_id = ? AND p.type = ? AND t.type = ?
-        """;
+        String cacheKey = userId.toString() + ":" + productType + ":" + transactionType;
 
-        Double sum = jdbcTemplate.queryForObject(sql, Double.class, userId, productType, transactionType);
-        return sum != null ? sum : 0.0;
+        return sumCache.get(cacheKey, key -> {
+            String sql = "SELECT COALESCE(SUM(t.amount), 0) FROM transactions t JOIN products p ON t.product_id = p.id WHERE t.user_id = ? AND p.type = ? AND t.type = ?";
+            Double sum = jdbcTemplate.queryForObject(sql, Double.class, userId, productType, transactionType);
+            return sum != null ? sum : 0.0;
+        });
+    }
+
+    public long getTransactionCountByProductType(UUID userId, String productType) {
+        String cacheKey = userId.toString() + ":" + productType;
+
+        return countCache.get(cacheKey, key -> {
+            String sql = "SELECT COUNT(t.id) FROM transactions t JOIN products p ON t.product_id = p.id WHERE t.user_id = ? AND p.type = ?";
+            Long count = jdbcTemplate.queryForObject(sql, Long.class, userId, productType);
+            return count != null ? count : 0L;
+        });
     }
 }
