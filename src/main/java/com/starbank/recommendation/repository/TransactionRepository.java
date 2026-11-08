@@ -57,4 +57,10 @@ public class TransactionRepository {
             return count != null ? count : 0L;
         });
     }
+
+    public void clearAllCaches() {
+        this.productTypeCache.invalidateAll();
+        this.sumCache.invalidateAll();
+        this.countCache.invalidateAll();
+    }
 }
