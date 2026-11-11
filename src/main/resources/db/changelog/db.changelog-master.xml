@@ -46,4 +46,18 @@
         </createTable>
     </changeSet>
 
+    <changeSet id="2" author="diana">
+        <createTable tableName="rule_stats">
+            <column name="id" type="BIGSERIAL">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="rule_id" type="UUID">
+                <constraints nullable="false" unique="true" foreignKeyName="fk_rule_stat" referencedTableName="recommendation_rules" referencedColumnNames="id" deleteCascade="true"/>
+            </column>
+            <column name="count" type="BIGINT" defaultValue="0">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+
 </databaseChangeLog>
