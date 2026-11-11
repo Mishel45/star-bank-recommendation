@@ -18,17 +18,35 @@ public class RuleStat {
     @Column(nullable = false)
     private Long count = 0L;
 
-    public RuleStat() {}
+    public RuleStat() {
+    }
 
     public RuleStat(DynamicRule rule, Long count) {
         this.rule = rule;
         this.count = count;
     }
 
-    public Long getId() { return id; }
-    public void setId(Long id) { this.id = id; }
-    public DynamicRule getRule() { return rule; }
-    public void setRule(DynamicRule rule) { this.rule = rule; }
-    public Long getCount() { return count; }
-    public void setCount(Long count) { this.count = count; }
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public DynamicRule getRule() {
+        return rule;
+    }
+
+    public void setRule(DynamicRule rule) {
+        this.rule = rule;
+    }
+
+    public Long getCount() {
+        return count;
+    }
+
+    public void setCount(Long count) {
+        this.count = count;
+    }
 }
