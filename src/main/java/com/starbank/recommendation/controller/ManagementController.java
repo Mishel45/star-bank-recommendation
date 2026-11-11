@@ -11,33 +11,42 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * Контроллер управления приложением (информация о сборке и сброс кэшей).
+ * Использует внедрение зависимостей через конструктор.
+ */
 @RestController
 @RequestMapping("/management")
 public class ManagementController {
 
     private final TransactionRepository transactionRepository;
-    private final BuildProperties BuildProperties; // Будет доступен автоматически после сборки jar-файла
+    private final BuildProperties buildProperties;
 
-    // Конструктор внедрения зависимостей без Ломбока
-    public ManagementController(TransactionRepository transactionRepository, BuildProperties buildInfo) {
+    // Конструктор внедрения зависимостей без использования Lombok
+    public ManagementController(TransactionRepository transactionRepository, BuildProperties buildProperties) {
         this.transactionRepository = transactionRepository;
-        this.BuildProperties = buildInfo;
+        this.buildProperties = buildProperties;
     }
 
-    // 1. Сброс кеша рекомендаций (POST /management/clear-caches)
+    /**
+     * Сброс кеша рекомендаций (POST /management/clear-caches).
+     * Очищает кэши Caffeine в репозитории транзакций.
+     */
     @PostMapping("/clear-caches")
     public ResponseEntity<Void> clearCaches() {
         transactionRepository.clearAllCaches();
-        return ResponseEntity.ok().build(); // Возвращает 200 OK без тела
+        return ResponseEntity.ok().build();
     }
 
-    // 2. Информация о сервисе для продакшена (GET /management/info)
+    /**
+     * Информация о сервисе для продакшена (GET /management/info).
+     * Динамически извлекает имя и версию проекта из pom.xml.
+     */
     @GetMapping("/info")
     public ResponseEntity<Map<String, String>> getServiceInfo() {
         Map<String, String> info = new HashMap<>();
-        // Извлекаем артефакт (имя) и версию динамически из pom.xml
-        info.put("name", BuildProperties.getArtifact());
-        info.put("version", BuildProperties.getVersion());
+        info.put("name", buildProperties.getArtifact());
+        info.put("version", buildProperties.getVersion());
         return ResponseEntity.ok(info);
     }
 }

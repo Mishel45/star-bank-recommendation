@@ -57,7 +57,10 @@ public class TransactionRepository {
             return count != null ? count : 0L;
         });
     }
-
+ /**
+     * Выполняет полную принудительную очистку всех трех кэшей рекомендаций.
+     * Последующие запросы гарантированно выполняют прямое обращение к БД.
+     */
     public void clearAllCaches() {
         this.productTypeCache.invalidateAll();
         this.sumCache.invalidateAll();
