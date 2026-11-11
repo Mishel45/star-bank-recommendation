@@ -1,6 +1,7 @@
 package com.starbank.recommendation.entity;
 
 import jakarta.persistence.*;
+
 import java.util.List;
 
 @Entity
@@ -27,14 +28,43 @@ public class QueryCondition {
     private List<String> arguments;
 
 
-    public Long getId() { return id; }
-    public void setId(Long id) { this.id = id; }
-    public DynamicRule getRule() { return rule; }
-    public void setRule(DynamicRule rule) { this.rule = rule; }
-    public String getQuery() { return query; }
-    public void setQuery(String query) { this.query = query; }
-    public boolean isNegate() { return negate; }
-    public void setNegate(boolean negate) { this.negate = negate; }
-    public List<String> getArguments() { return arguments; }
-    public void setArguments(List<String> arguments) { this.arguments = arguments; }
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public DynamicRule getRule() {
+        return rule;
+    }
+
+    public void setRule(DynamicRule rule) {
+        this.rule = rule;
+    }
+
+    public String getQuery() {
+        return query;
+    }
+
+    public void setQuery(String query) {
+        this.query = query;
+    }
+
+    public boolean isNegate() {
+        return negate;
+    }
+
+    public void setNegate(boolean negate) {
+        this.negate = negate;
+    }
+
+    public List<String> getArguments() {
+        return arguments;
+    }
+
+    public void setArguments(List<String> arguments) {
+        this.arguments = arguments;
+    }
 }

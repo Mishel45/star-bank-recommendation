@@ -9,6 +9,14 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+/**
+ * Сервис для управления и вычисления персональных рекомендаций клиентов.
+ * Объединяет обработку статических стратегий и динамических предикатов.
+ *
+ * @author Михаил Павлов
+ * @author Диана Скибицкая
+ * @version 1.0.0
+ */
 @Service
 public class RecommendationService {
 
@@ -21,8 +29,11 @@ public class RecommendationService {
     }
 
     /**
-     * Запускает проверку всех существующих правил для конкретного пользователя.
-     * Собирает только подошедшие продукты и возвращает их список.
+     * Формирует полный гибридный список персональных предложений для конкретного пользователя.
+     * Опрашивает фиксированные правила из первого ТЗ и динамические правила из PostgreSQL.
+     *
+     * @param userId уникальный идентификатор пользователя (UUID)
+     * @return список объектов {@link RecommendationDto}, подходящих под условия транзакций клиента
      */
     public List<RecommendationDto> getAllRecommendationsForUser(UUID userId) {
         List<RecommendationDto> validRecommendations = new ArrayList<>();
