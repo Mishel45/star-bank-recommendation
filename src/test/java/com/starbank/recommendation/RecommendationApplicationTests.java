@@ -17,7 +17,9 @@ class RecommendationApplicationTests {
 	@Autowired
 	private MockMvc mockMvc;
 
-	@Test
+
+
+    @Test
 	void testInvest500Recommendation() throws Exception {
 		mockMvc.perform(get("/recommendation/cd515076-5d8a-44be-930e-8d4fcb79f42d"))
 				.andExpect(status().isOk())
