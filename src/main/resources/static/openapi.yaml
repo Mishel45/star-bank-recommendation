@@ -1,66 +1,183 @@
 openapi: 3.0.3
 info:
-  title: Recommendation Service — Стар Банк MVP
+  title: Recommendation Service — Стар Банк
   version: 1.0.0
-  description: API сервиса персональных рекомендаций банковских продуктов на основе транзакционной активности клиентов банка «Стар». Разработчики — Михаил Павлов и Диана Скибицкая.
-servers:
-  - url: http://localhost:8080
-    description: Локальный сервер разработки
+  description: Полная спецификация REST API сервиса персональных рекомендаций, динамических правил и управления приложением.
+
 paths:
   /recommendation/{user_id}:
     get:
-      summary: Получить персональные рекомендации для клиента
-      operationId: getRecommendations
-      description: Анализирует историю транзакций пользователя в базе данных H2 и возвращает список подходящих банковских продуктов на основе бизнес-правил MVP.
+      summary: Получить персональные рекомендации для пользователя
       parameters:
         - name: user_id
           in: path
           required: true
-          description: Уникальный идентификатор пользователя (UUID)
           schema:
             type: string
             format: uuid
-            example: cd515076-5d8a-44be-930e-8d4fcb79f42d
       responses:
         '200':
-          description: Успешная обработка запроса. Возвращается список рекомендаций (может быть пустым).
+          description: Список рекомендаций (может быть пустым)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecommendationResponse'
+        '400':
+          description: Некорректный формат UUID
+
+  /rule:
+    post:
+      summary: Создать новое динамическое правило рекомендаций
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DynamicRuleRequest'
+      responses:
+        '200':
+          description: Правило успешно сохранено
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DynamicRuleResponse'
+    get:
+      summary: Получить список всех динамических правил
+      responses:
+        '200':
+          description: Массив всех правил в поле data
           content:
             application/json:
               schema:
                 type: object
-                required:
-                  - user_id
-                  - recommendations
                 properties:
-                  user_id:
-                    type: string
-                    format: uuid
-                    description: Идентификатор запрашиваемого пользователя
-                    example: cd515076-5d8a-44be-930e-8d4fcb79f42d
-                  recommendations:
+                  data:
                     type: array
-                    description: Список подходящих банковских продуктов
                     items:
-                      $ref: '#/components/schemas/RecommendationDto'
+                      $ref: '#/components/schemas/DynamicRuleResponse'
+
+  /rule/{product_id}:
+    delete:
+      summary: Удалить динамическое правило по ID продукта
+      parameters:
+        - name: product_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Правило и связанная статистика успешно удалены
+
+  /rule/stats:
+    get:
+      summary: Получить статистику срабатываний всех правил
+      responses:
+        '200':
+          description: Список счетчиков срабатываний
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  stats:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/RuleStatItem'
+
+  /management/clear-caches:
+    post:
+      summary: Принудительный сброс всех кэшей рекомендаций (Caffeine)
+      responses:
+        '200':
+          description: Кэши успешно очищены
+
+  /management/info:
+    get:
+      summary: Получить название и версию сервиса из pom.xml
+      responses:
+        '200':
+          description: Метаданные сборки приложения
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServiceInfo'
+
 components:
   schemas:
     RecommendationDto:
       type: object
-      required:
-        - id
-        - name
-        - text
       properties:
         id:
           type: string
           format: uuid
-          description: Уникальный ID продукта (соответствует ТЗ)
-          example: 147f6a0f-3b91-413b-ab99-87f081d60d5a
         name:
           type: string
-          description: Название банковского продукта
-          example: Invest 500
         text:
           type: string
-          description: Маркетинговое описание продукта и условий его открытия
-          example: Откройте свой путь к успеху с индивидуальным инвестиционным счетом (ИИС) от нашего банка!...
+
+    RecommendationResponse:
+      type: object
+      properties:
+        user_id:
+          type: string
+          format: uuid
+        recommendations:
+          type: array
+          items:
+            $ref: '#/components/schemas/RecommendationDto'
+
+    QueryCondition:
+      type: object
+      properties:
+        query:
+          type: string
+          enum: [USER_OF, ACTIVE_USER_OF, TRANSACTION_SUM_COMPARE, TRANSACTION_SUM_COMPARE_DEPOSIT_WITHDRAW]
+        arguments:
+          type: array
+          items:
+            type: string
+        negate:
+          type: boolean
+
+    DynamicRuleRequest:
+      type: object
+      properties:
+        product_name:
+          type: string
+        product_id:
+          type: string
+          format: uuid
+        product_text:
+          type: string
+        rule:
+          type: array
+          items:
+            $ref: '#/components/schemas/QueryCondition'
+
+    DynamicRuleResponse:
+      allOf:
+        - type: object
+          properties:
+            id:
+              type: string
+              format: uuid
+        - $ref: '#/components/schemas/DynamicRuleRequest'
+
+    RuleStatItem:
+      type: object
+      properties:
+        rule_id:
+          type: string
+          format: uuid
+        count:
+          type: string
+
+    ServiceInfo:
+      type: object
+      properties:
+        name:
+          type: string
+        version:
+          type: string
